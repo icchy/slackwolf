@@ -21,6 +21,6 @@ class Bodyguard extends Role
      * {@inheritdoc}
      */
 	public function getDescription() {
-		return "A villager who may protect a player from being eliminated once each night, but not the same person two nights in a row.";
+		return "村人陣営，1人のプレイやーを夜に護衛することができる．ただし2日連続して同じプレイヤーを選ぶことはできない．";
 	}
 }

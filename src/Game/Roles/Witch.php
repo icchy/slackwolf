@@ -21,6 +21,6 @@ class Witch extends Role
      * {@inheritdoc}
      */
     public function getDescription() {
-        return "A villager who has 1 healing potion and 1 poison potion and may heal and/or kill targets at night, but can only do each action once per game.";
+        return "村人陣営，夜に蘇生または毒殺するプレイヤーを選べる．一回のゲームにつきそれぞれ一度のみ実行可能．";
     }
 }

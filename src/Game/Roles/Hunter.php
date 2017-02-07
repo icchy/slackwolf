@@ -21,6 +21,6 @@ class Hunter extends Role
      * {@inheritdoc}
      */
     public function getDescription() {
-        return "A villager who can kill 1 other person if he or she is killed, during day or night.";
+        return "村人陣営，自分が殺害された時に道連れにするプレイヤーを1人選べる．";
     }
 }

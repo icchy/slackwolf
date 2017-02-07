@@ -29,6 +29,6 @@ class WolfMan extends Werewolf
      * {@inheritdoc}
      */
 	public function getDescription() {
-		return "A werewolf who appears to the Seer as a Villager.";
+		return "人狼陣営．占い結果が村人になる．";
 	}
 }

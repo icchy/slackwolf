@@ -21,6 +21,6 @@ class Tanner extends Role
      * {@inheritdoc}
      */
 	public function getDescription() {
-		return "A player not on the side of the villagers or the werewolves who wins if is killed.";
+		return "村人と人狼いずれの陣営にも属さない．殺されると勝利．";
 	}
 }
