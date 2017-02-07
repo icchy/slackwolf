@@ -72,7 +72,7 @@ class HelpCommand extends Command
         if ($this->channel[0] != 'D') {
             $client->getChannelGroupOrDMByID($this->channel)
                ->then(function (ChannelInterface $channel) use ($client) {
-                   $client->send(":book: Please check your Direct Messages for help text.", $channel);
+                   $client->send(":book: helpを見るにはDMを確認して下さい．", $channel);
                });
         }
     }
