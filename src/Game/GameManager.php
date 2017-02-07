@@ -148,12 +148,14 @@ class GameManager
         }
 
         if ($game->hunterNeedsToShoot) {
-            $this->sendMessageToChannel($game, "Hunter still needs to kill someone.");
+            $huntername = Role::HUNTER;
+            $this->sendMessageToChannel($game, "${huntername}は道連れにするプレイヤーを選んで下さい．");
             return;
         }
 
         if ($game->hunterNeedsToShoot) {
-            $this->sendMessageToChannel($game, "It is still night, and the Hunter still needs to kill someone.");
+            $huntername = Role::HUNTER;
+            $this->sendMessageToChannel($game, "まだ夜は更けません．${huntername}は道連れにするプレイヤーを選んで下さい．");
             return;
         }
 
@@ -260,7 +262,7 @@ class GameManager
         if (!$this->hasGame($id)) { return; }
         $users = $game->getLobbyPlayers();
         if(count($users) < 3) {
-            $this->sendMessageToChannel($game, "Cannot start a game with less than 3 players.");
+            $this->sendMessageToChannel($game, "ゲームを始めるには最低でも3人必要です．");
             return;
         }
 
@@ -290,17 +292,18 @@ class GameManager
 
         if($winningTeam !== null) {
             $winMsg = ":clipboard: Role Summary\r\n--------------------------------------------------------------\r\n{$playerList}\r\n\r\n:tada: The game is over. The ";
+            $winMsg = ":clipboard: 各プレイヤーの役職一覧\r\n--------------------------------------------------------------\r\n{$playerList}\r\n\r\n:tada: ";
             if ($winningTeam == Role::VILLAGER) {
-                $winMsg .= "Townsfolk are victorious!";
+                $winMsg .= "村人陣営の勝利です!";
             }
             elseif ($winningTeam == Role::WEREWOLF) {
-                $winMsg .= "Werewolves are victorious!";
+                $winMsg .= "人狼陣営の勝利です!";
             }
             elseif ($winningTeam == Role::TANNER) {
-                $winMsg .= "Tanner is victorious!";
+                $winMsg .= "皮なめし職人の勝利です!";
             }
             else {
-                $winMsg .= "UnknownTeam is victorious!";
+                $winMsg .= "第3勢力の勝利です!";
             }
             $this->sendMessageToChannel($game, $winMsg);
         }
@@ -308,15 +311,16 @@ class GameManager
         if ($enderUserId !== null) {
             $client->getUserById($enderUserId)
                    ->then(function (\Slack\User $user) use ($game, $playerList) {
-                       $gameMsg = ":triangular_flag_on_post: The ";
+                       $gameMsg = ":triangular_flag_on_post: ";
                        $roleSummary = "";
+                       $gameMsg .= "@{$user->getUsername()}が";
                        if($game->getState() != GameState::LOBBY) {
-                           $gameMsg .= "game was ended";
-                           $roleSummary .= "\r\n\r\nRole Summary:\r\n----------------\r\n{$playerList}";
+                         $gameMsg .= "ゲームを終了しました．";
+                           $roleSummary .= "\r\n\r\n各プレイヤーの役職一覧:\r\n----------------\r\n{$playerList}";
                        } else {
-                           $gameMsg .= "lobby was closed";
+                           $gameMsg .= "ロビーを閉じました．";
                        }
-                       $this->sendMessageToChannel($game, $gameMsg." by @{$user->getUsername()}.".$roleSummary);
+                       $this->sendMessageToChannel($game, $gameMsg.$roleSummary);
                    });
         }
 
@@ -395,12 +399,12 @@ class GameManager
         $hunterMsg = "\r\n";
 
         if (count($players_to_be_lynched) == 0) {
-            $lynchMsg .= ":peace_symbol: The townsfolk decided not to lynch anybody today.";
+            $lynchMsg .= ":peace_symbol: 今日は誰も処刑しないことにしました．";
         } elseif (count($players_to_be_lynched) > 1) {
-            $lynchMsg .= ":peace_symbol: The townsfolk couldn't agree on who to lynch, so nobody is hung today.";
+            $lynchMsg .= ":peace_symbol: 意見が割れてしまったため，今日は誰も処刑しないことにしました．";
          }
          else {
-            $lynchMsg .= ":newspaper: With pitchforks in hand, the townsfolk killed: ";
+            $lynchMsg .= ":newspaper: 投票によって，一人のプレイヤーが処刑されました．";
 
             $lynchedNames = [];
             foreach ($players_to_be_lynched as $player_id) {
@@ -411,7 +415,7 @@ class GameManager
                 if ($player->role->isRole(Role::HUNTER)) {
                     $game->setHunterNeedsToShoot(true);
                     $hunterMsg .= ":bow_and_arrow: " . $player->getUsername() .
-                        " as hunter you may shoot one person.  Type !shoot @playername, or !shoot noone.";
+                      " は".Role::HUNTER."でした.  !shoot @playername を入力して道連れにする人を選ぶか，誰も道連れにしない場合は !shoot noone を入力して下さい．";
                 }
             }
 
@@ -445,26 +449,26 @@ class GameManager
         foreach ($game->getLivingPlayers() as $player) {
             $client->getDMByUserId($player->getId())
                 ->then(function (DirectMessageChannel $dmc) use ($client,$player,$game) {
-                    $client->send("Your role is {$player->role->getName()}", $dmc);
+                    $client->send("あなたは{$player->role->getName()}です．", $dmc);
 
                     if ($player->role->isWerewolfTeam()) {
                         if (count($game->getWerewolves()) > 1) {
                             $werewolves = PlayerListFormatter::format($game->getWerewolves());
-                            $client->send("The werewolves are: {$werewolves}", $dmc);
+                            $client->send("人狼は {$werewolves} です．", $dmc);
                         } else {
-                            $client->send("You are the only werewolf.", $dmc);
+                            $client->send("人狼はあなた1人のみです．", $dmc);
                         }
                     }
 
                     if ($player->role->isRole(Role::SEER)) {
-                        $client->send("Seer, select a player by saying !see #channel @username.\r\nDO NOT DISCUSS WHAT YOU SEE DURING THE NIGHT, ONLY DISCUSS DURING THE DAY IF YOU ARE NOT DEAD!", $dmc);
+                        $client->send("占い師は !see #channel @username を入力して1人占って下さい．\r\n*占い結果について議論できるのは昼のみです．…生きていればの話ですが．*", $dmc);
                     }
 
                     if ($player->role->isRole(Role::BEHOLDER)) {
                         $seers = $game->getPlayersOfRole(Role::SEER);
                         $seers = PlayerListFormatter::format($seers);
 
-                        $client->send("The seer is: {$seers}", $dmc);
+                        $client->send("占い師は {$seers} です．", $dmc);
                     }
                 });
         }
@@ -472,13 +476,13 @@ class GameManager
         $playerList = PlayerListFormatter::format($game->getLivingPlayers());
         $roleList = RoleListFormatter::format($game->getLivingPlayers());
 
-        $msg = ":wolf: A new game of Werewolf is starting! For a tutorial, type !help.\r\n\r\n";
-        $msg .= "Players: {$playerList}\r\n";
-        $msg .= "Possible Roles: {$game->getRoleStrategy()->getRoleListMsg()}\r\n\r\n";
+        $msg = ":wolf: 新しくゲームを初めます．チュートリアルを表示するには !help を入力して下さい．\r\n\r\n";
+        $msg .= "プレイヤー: {$playerList}\r\n";
+        $msg .= "有効な役職: {$game->getRoleStrategy()->getRoleListMsg()}\r\n\r\n";
         $msg .= WeatherFormatter::format($game)."\r\n";
         if ($this->optionsManager->getOptionValue(OptionName::role_seer)) {
             
-            $msg .= " The game will begin when the Seer chooses someone.";
+            $msg .= " ゲームは占い師が誰かを占うと始まります．";
         }
         $this->sendMessageToChannel($game, $msg);
 
@@ -494,15 +498,15 @@ class GameManager
     {
         $remainingPlayers = PlayerListFormatter::format($game->getLivingPlayers());
         $dayBreakMsg = WeatherFormatter::format($game)."\r\n";
-        $dayBreakMsg .= "Remaining Players: {$remainingPlayers}\r\n\r\n";
-        $dayBreakMsg .= "Villagers, find the Werewolves! Type !vote @username to vote to lynch a player.";
+        $dayBreakMsg .= "生存者: {$remainingPlayers}\r\n\r\n";
+        $dayBreakMsg .= "村人は人狼を見つけて下さい! !vote @username を入力して処刑するプレイヤーを選びます．";
         if ($this->optionsManager->getOptionValue(OptionName::changevote))
         {
-            $dayBreakMsg .= "\r\nYou may change your vote at any time before voting closes. Type !vote clear to remove your vote.";
+            $dayBreakMsg .= "\r\n投票を締め切るまでは投票内容を変えることができます．投票を取り消すには !vote clear と入力して下さい．";
         }
         if ($this->optionsManager->getOptionValue(OptionName::no_lynch))
         {
-            $dayBreakMsg .= "\r\nType !vote noone to vote to not lynch anybody today.";
+            $dayBreakMsg .= "\r\n今日は誰も処刑したくない場合， !vote noone と入力して下さい．";
         }
 
         $this->sendMessageToChannel($game, $dayBreakMsg);
@@ -519,7 +523,7 @@ class GameManager
 
         $wolves = $game->getWerewolves();
 
-        $wolfMsg = ":moon: It is night and it is time to hunt. Type !kill #channel @player to make your choice. ";
+        $wolfMsg = ":moon: 夜になりました．狩りの時間です．!kill #channel @player を入力して殺すプレイヤーを選んで下さい．";
 
         foreach ($wolves as $wolf)
         {
@@ -529,7 +533,7 @@ class GameManager
                   });
         }
 
-        $seerMsg = ":crystal_ball: Seer, select a player by saying !see #channel @username.";
+        $seerMsg = ":crystal_ball: 占い師は !see #channel @username を入力して占うプレイヤーを選んで下さい．";
 
         $seers = $game->getPlayersOfRole(Role::SEER);
 
@@ -541,7 +545,8 @@ class GameManager
                  });
         }
 
-        $bodyGuardMsg = ":shield: Bodyguard, you may guard someone once per with your grizzled ex-lawman skills. That player cannot be eliminated. Type !guard #channel @user";
+        $bodyguardname = Role::BODYGUARD;
+        $bodyGuardMsg = ":shield: ${bodyguardname}は !guard #channel @user を入力して護衛するプレイヤーを選んで下さい．";
 
         $bodyguards = $game->getPlayersOfRole(Role::BODYGUARD);
 
@@ -555,7 +560,7 @@ class GameManager
         $witches = $game->getPlayersOfRole(Role::WITCH);
 
         if (count($witches) > 0) {
-            $witch_msg = ":wine_glass:  You may poison someone once for the entire game.  Type \"!poison #channel @user\" to poison someone \r\nor \"!poison #channel noone\" to do nothing.  \r\n:warning: Night will not end until you make a decision.";
+            $witch_msg = ":wine_glass:  魔女は1回だけ誰か1人を毒殺できます．毒殺する場合は !poison #channel @user を入力し，何もしない場合は !poison #channel noone を入力して下さい．\r\n:warning: あなたの行動が終わるまで夜は更けません．";
 
             if ($game->getWitchPoisonPotion() > 0) {
                 foreach ($witches as $witch) {
@@ -653,13 +658,13 @@ class GameManager
             if ($hunterKilled) {
 
                 $game->setHunterNeedsToShoot(true);
-                $hunterMsg = ":bow_and_arrow: " . $hunterName . " you were killed.  The night isn't over, though, because as a hunter you can take one other player with you to your grave.  Type !shoot @playername, or !shoot noone.";
+                $hunterMsg = ":bow_and_arrow: " . $hunterName . " は殺害されました．1人を道連れにする場合は!shoot @player を入力し，そのまま何もしない場合は !shoot noone を入力して下さい．";
                 $this->sendMessageToChannel($game, $hunterMsg);
             }
         }
 
         if ($numKilled == 0) {
-            $this->sendMessageToChannel($game, "There was no deaths in the night!");
+            $this->sendMessageToChannel($game, "昨晩の犠牲者はいませんでした．");
         }
 
         $game->setNightEnded(true);
